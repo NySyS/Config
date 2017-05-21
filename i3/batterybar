@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+output=$(acpi battery)
+percentage=$(echo "$output" | grep -o -m1 '[0-9]\{1,3\}%' | tr -d '%')
+status=$(echo "$output" | egrep -o -m1 'Discharging|Charging|AC|Full|Unknown')
+batt_st=""
+
+#There are 8 colors that reflect the current battery percentage when 
+#discharging
+dis_colors=("#FF0027" "#FF3B05" "#FFB923" "#FFD000" "#E4FF00" "#ADFF00"
+			"#6DFF00" "#10BA00") 
+charging_color="#00AFE3"
+full_color="#FFFFFF"
+ac_color="#535353"
+
+if (( percentage > 0 && percentage < 20  )); then
+    batt_st=""
+elif (( percentage >= 20 && percentage < 40 )); then
+    batt_st=""
+elif (( percentage >= 40 && percentage < 60 )); then
+    batt_st=""
+elif (( percentage >= 60 && percentage < 80 )); then
+    batt_st=""
+elif (( percentage >=80 )); then
+    batt_st=""
+fi
+
+if [[ "$status" = "Unknown" ]]; then
+    batt_st="<sup>?</sup>$batt_st"
+fi
+
+case "$status" in
+    "Charging")
+        color="$charging_color"
+        ;;
+    "Full")
+        color="$full_color"
+        ;;
+    "AC")
+        color="$ac_color"
+        ;;
+    "Discharging"|"Unknown")
+        if (( percentage >= 0 && percentage < 10 )); then
+            color="${dis_colors[0]}"
+        elif (( percentage >= 10 && percentage < 20 )); then
+            color="${dis_colors[1]}"
+        elif (( percentage >= 20 && percentage < 30 )); then
+            color="${dis_colors[2]}"
+        elif (( percentage >= 30 && percentage < 40 )); then
+            color="${dis_colors[3]}"
+        elif (( percentage >= 40 && percentage < 60 )); then
+            color="${dis_colors[4]}"
+        elif (( percentage >= 60 && percentage < 70 )); then
+            color="${dis_colors[5]}"
+        elif (( percentage >= 70 && percentage < 80 )); then
+            color="${dis_colors[6]}"
+        elif (( percentage >= 80 )); then
+            color="${dis_colors[7]}"
+        fi
+        ;;
+esac
+
+if [[ "$BLOCK_BUTTON" -eq 1 ]]; then 
+    echo "$status <span foreground=\"$color\">$percentage%$remaining_formatted</span>"
+fi
+    echo "<span foreground=\"$color\">$batt_st</span>" 
