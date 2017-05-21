@@ -1,0 +1,53 @@
+#!/bin/bash
+
+function startvm {
+    /bin/bash $DIR/startvm $1
+}
+
+function stopvm {
+    /bin/bash $DIR/stopvm $1
+}
+if [ -z $DISPLAY ]; then
+    dialog=dialog
+else
+    dialog=Xdialog
+fi
+DIR=$(dirname ${BASH_SOURCE[0]});
+TOOL='1 startvm 2 stopvm'
+VMS_LIST=`VBoxManage list vms | sed "s/\"\([^\"]\+\)\".\+/\1/"` 
+VMS=() 
+
+OLD_IFS=$IFS
+IFS=$'\n'
+for VM_NAME in $VMS_LIST; do
+    if [ $(VBoxManage showvminfo "${VM_NAME}" | grep -c "running (since") -eq 1 ]; then
+        status="\\u23FA"
+    else
+        status='o'
+    fi
+    VMS+=($((${#VMS[@]}/2+1)) $(printf "${status} | ${VM_NAME}")) 
+done
+IFS=$OLD_IFS
+
+#declare -p VMS
+exec 3>&1
+RET=$(${dialog} --title "VirtualBox" --menu "Choose:" 20 70 4 ${TOOL} \
+     --and-widget --column-separator "|" --menu ChooseVM: 20 70 9 "${VMS[@]}" 2>&1 1>&3)
+wait=$?
+3>&-
+#echo A${RET}B|od -c
+CH=${RET%[$IFS]*}
+VM=${RET#*[$IFS]}
+#echo "'$wait'"
+if [ $wait -eq 1 ]; then
+    echo "Cancelled"
+    exit
+fi
+case $CH in
+    1)
+        startvm $(echo ${VMS[$((${VM}*2-1))]} | cut -d'|' -f2)
+        ;;
+    2)
+        stopvm $(echo ${VMS[$((${VM}*2-1))]} | cut -d'|' -f2)
+        ;;
+esac

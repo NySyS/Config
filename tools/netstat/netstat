@@ -1,0 +1,5 @@
+#!/bin/bash
+while true; do
+    netstat -panot
+    sleep 1 && clear
+done
